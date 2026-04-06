@@ -6,9 +6,9 @@
   <title>Poker Equity & Insurance Tool</title>
   <style>
     :root {
-      --bg:    #0a0d14;
-      --bg2:   #111520;
-      --bg3:   #181d2e;
+      --bg:    #141921;
+      --bg2:   #1c2438;
+      --bg3:   #222d42;
       --green: #1db97a;
       --red:   #e05555;
       --amber: #e0a030;
@@ -33,9 +33,27 @@
       background: var(--bg2);
       border-bottom: 1px solid #1e2540;
       padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
     }
-    .header h1 { font-size: 18px; font-weight: 700; letter-spacing: .3px; }
-    .header p  { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .header-text h1 { font-size: 18px; font-weight: 700; letter-spacing: .3px; }
+    .header-text p  { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid #2a3050;
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 12px;
+      letter-spacing: .5px;
+      flex-shrink: 0;
+      transition: border-color .15s, color .15s;
+    }
+    .lang-btn:hover { border-color: var(--blue); color: var(--blue); }
 
     /* ── Tabs ── */
     .tabs {
@@ -271,32 +289,27 @@
     .bk-row.cashout-row .bk-value { color: var(--green); font-size: 16px; font-weight: 700; }
     .bk-row.fee-row .bk-value     { color: var(--red); }
 
-    /* Sample table */
-    .sample-section { margin-bottom: 16px; }
+    /* Section title (shared) */
     .section-title {
       font-size: 11px; font-weight: 600; color: var(--muted);
       text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px;
     }
-    .sample-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    .sample-table th {
-      background: var(--bg3); color: var(--muted); font-size: 10px; font-weight: 600;
-      padding: 6px 8px; text-align: left; border-bottom: 1px solid #1e2540;
-      text-transform: uppercase; letter-spacing: .4px;
-    }
-    .sample-table td { padding: 5px 8px; border-bottom: 1px solid #161b2e; font-family: var(--mono); }
-    .sample-table tr:last-child td { border-bottom: none; }
-    .result-p1  { color: var(--green); font-weight: 700; }
-    .result-p2  { color: var(--red);   font-weight: 700; }
-    .result-tie { color: var(--amber); font-weight: 700; }
-    .card-red   { color: #f06060; }
+    .card-red { color: #f06060; }
 
     /* Hand distribution */
     .dist-section { margin-bottom: 4px; }
-    .dist-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
-    .dist-name  { font-size: 11px; color: var(--muted); width: 140px; flex-shrink: 0; text-align: right; }
-    .dist-track { flex: 1; height: 13px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
-    .dist-fill  { height: 100%; background: var(--green); border-radius: 3px; opacity: .75; }
-    .dist-count { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 36px; text-align: right; }
+    .dist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 560px) { .dist-grid { grid-template-columns: 1fr; } }
+    .dist-col-header { font-size: 11px; font-weight: 700; margin-bottom: 8px; }
+    .dist-col-header.p1 { color: var(--green); }
+    .dist-col-header.p2 { color: var(--red); }
+    .dist-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+    .dist-name  { font-size: 10px; color: var(--muted); width: 108px; flex-shrink: 0; text-align: right; }
+    .dist-track { flex: 1; height: 11px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+    .dist-fill       { height: 100%; border-radius: 3px; opacity: .8; }
+    .dist-fill.p1    { background: var(--green); }
+    .dist-fill.p2    { background: var(--red); }
+    .dist-count { font-family: var(--mono); font-size: 10px; color: var(--muted); width: 30px; text-align: right; }
 
     /* ── 72 Club tab ── */
     .c72-block {
@@ -373,13 +386,16 @@
 <body>
 
   <div class="header">
-    <h1>Poker Equity &amp; Insurance Tool</h1>
-    <p>N8 EV Cashout · 72 Club Insurance — chạy offline, không cần server</p>
+    <div class="header-text">
+      <h1>Poker Equity &amp; Insurance Tool</h1>
+      <p data-i18n="subtitle">N8 EV Cashout · 72 Club Insurance — chạy offline, không cần server</p>
+    </div>
+    <button class="lang-btn" id="lang-btn">EN</button>
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" data-tab="n8">N8 EV Cashout</button>
-    <button class="tab-btn" data-tab="club72">72 Club Insurance</button>
+    <button class="tab-btn active" data-tab="n8" data-i18n="tabN8">N8 EV Cashout</button>
+    <button class="tab-btn" data-tab="club72" data-i18n="tabClub72">72 Club Insurance</button>
   </div>
 
   <!-- ══ TAB N8 ════════════════════════════════════════════════ -->
@@ -388,26 +404,26 @@
     <!-- Card Selector -->
     <div class="selector-area">
       <div class="selector-row">
-        <span class="selector-label p1">Cửa Trên (P1)</span>
+        <span class="selector-label p1" data-i18n="labelP1">Cửa Trên (P1)</span>
         <div class="slots" id="slots-p1"></div>
       </div>
       <div class="selector-row">
-        <span class="selector-label p2">Cửa Dưới (P2)</span>
+        <span class="selector-label p2" data-i18n="labelP2">Cửa Dưới (P2)</span>
         <div class="slots" id="slots-p2"></div>
       </div>
       <div class="selector-row">
-        <span class="selector-label flop">Flop</span>
+        <span class="selector-label flop" data-i18n="labelFlop">Flop</span>
         <div class="slots" id="slots-flop"></div>
       </div>
       <div class="selector-row">
-        <span class="selector-label turn">Turn <span style="font-weight:400;color:var(--muted)">(tuỳ chọn)</span></span>
+        <span class="selector-label turn">Turn <span style="font-weight:400;color:var(--muted)" data-i18n="labelTurnOpt">(tuỳ chọn)</span></span>
         <div class="slots" id="slots-turn"></div>
       </div>
     </div>
 
     <!-- Deck Picker -->
     <div class="deck-area">
-      <div class="deck-title">Chọn lá bài — click slot trước, rồi click lá</div>
+      <div class="deck-title" data-i18n="deckTitle">Chọn lá bài — click slot trước, rồi click lá</div>
       <div class="deck-grid" id="deck-grid"></div>
     </div>
 
@@ -415,7 +431,7 @@
     <div class="btn-row">
       <button class="btn btn-preset" id="btn-preset1">A♠A♥ vs 7♦8♦ (Flop: 9♦6♣2♠)</button>
       <button class="btn btn-preset" id="btn-preset2">K♠K♥ vs Q♦J♦ (Flop: A♦T♣2♠)</button>
-      <button class="btn btn-clear"  id="btn-clear">Xóa hết</button>
+      <button class="btn btn-clear"  id="btn-clear" data-i18n="btnClearAll">Xóa hết</button>
     </div>
     <div class="btn-row">
       <button class="btn btn-calc" id="btn-calc" disabled>Enumerate 990 Combinations</button>
@@ -423,7 +439,7 @@
 
     <!-- Results -->
     <div class="results-area" id="results-area">
-      <div class="results-placeholder">Chọn đủ 7 lá rồi nhấn Enumerate để tính equity.</div>
+      <div class="results-placeholder" data-i18n="placeholder">Chọn đủ 7 lá rồi nhấn Enumerate để tính equity.</div>
     </div>
 
   </div><!-- /tab-n8 -->
@@ -434,16 +450,16 @@
     <!-- Pot input -->
     <div class="c72-block">
       <div class="c72-pot-row">
-        <label>Total Pot (VNĐ)</label>
+        <label data-i18n="c72TotalPot">Total Pot (VNĐ)</label>
         <input class="c72-input" id="c72-pot" type="number" min="0" placeholder="1000000" value="1000000">
       </div>
     </div>
 
     <!-- Turn Insurance -->
     <div class="c72-block">
-      <div class="c72-block-title turn">Turn Insurance</div>
+      <div class="c72-block-title turn" data-i18n="c72Turn">Turn Insurance</div>
       <div class="c72-slider-row">
-        <label>Số outs</label>
+        <label data-i18n="c72Outs">Số outs</label>
         <input class="c72-slider" id="c72-turn-slider" type="range" min="1" max="13" value="8">
         <input class="c72-num-input" id="c72-turn-num" type="number" min="1" max="13" value="8">
       </div>
@@ -452,9 +468,9 @@
 
     <!-- River Insurance (independent) -->
     <div class="c72-block">
-      <div class="c72-block-title river">River Insurance</div>
+      <div class="c72-block-title river" data-i18n="c72River">River Insurance</div>
       <div class="c72-slider-row">
-        <label>Số outs</label>
+        <label data-i18n="c72Outs">Số outs</label>
         <input class="c72-slider" id="c72-river-slider" type="range" min="1" max="13" value="7">
         <input class="c72-num-input" id="c72-river-num" type="number" min="1" max="13" value="7">
       </div>
@@ -463,18 +479,18 @@
 
     <!-- Summary table -->
     <div class="c72-block">
-      <div class="section-title">Bảng tóm tắt — tất cả outs 1–13</div>
+      <div class="section-title" data-i18n="c72SummaryTitle">Bảng tóm tắt — tất cả outs 1–13</div>
       <div style="overflow-x:auto">
         <table class="c72-summary-table" id="c72-summary-table">
           <thead>
             <tr>
-              <th>Outs</th>
-              <th>Phí (3.5%)</th>
-              <th>Hit% Turn (/45)</th>
-              <th>Hit% River (/44)</th>
-              <th>Fair Turn</th>
-              <th>Fair River</th>
-              <th>Edge (Turn)</th>
+              <th data-i18n="c72OutsCol">Outs</th>
+              <th data-i18n="c72Fee">Phí (3.5%)</th>
+              <th data-i18n="c72HitTurn">Hit% Turn (/45)</th>
+              <th data-i18n="c72HitRiver">Hit% River (/44)</th>
+              <th data-i18n="c72FairTurn">Fair Turn</th>
+              <th data-i18n="c72FairRiver">Fair River</th>
+              <th data-i18n="c72Edge">Edge (Turn)</th>
             </tr>
           </thead>
           <tbody id="c72-summary-body"></tbody>
@@ -484,13 +500,139 @@
 
     <!-- Fairness chart -->
     <div class="c72-block">
-      <div class="section-title">72 Club vs Fair Value</div>
+      <div class="section-title" data-i18n="c72ChartTitle">72 Club vs Fair Value</div>
       <div class="c72-chart-wrap" id="c72-chart-wrap"></div>
     </div>
 
   </div><!-- /tab-club72 -->
 
 <script>
+// =============================================================
+// i18n
+// =============================================================
+
+const STRINGS = {
+  vi: {
+    subtitle:      'N8 EV Cashout · 72 Club Insurance — chạy offline, không cần server',
+    tabN8:         'N8 EV Cashout',
+    tabClub72:     '72 Club Insurance',
+    labelP1:       'Cửa Trên (P1)',
+    labelP2:       'Cửa Dưới (P2)',
+    labelFlop:     'Flop',
+    labelTurnOpt:  '(tuỳ chọn)',
+    deckTitle:     'Chọn lá bài — click slot trước, rồi click lá',
+    btnClearAll:   'Xóa hết',
+    btnEnumFlop:   'Enumerate 990 Combinations (Flop)',
+    btnEnumTurn:   'Enumerate 44 Combinations (Turn)',
+    placeholder:   'Chọn đủ 7 lá rồi nhấn Enumerate để tính equity.',
+    loadingFlop:   'Đang enumerate 990 combinations (Flop)…',
+    loadingTurn:   'Đang enumerate 44 combinations (Turn)…',
+    playerP1:      'Cửa Trên (P1)',
+    playerP2:      'Cửa Dưới (P2)',
+    statWins:      'P1 thắng',
+    statTies:      'Hòa',
+    statLoss:      'P2 thắng',
+    statFlop:      'Flop — 990 combos',
+    statTurn:      'Turn — 44 combos',
+    cashoutTitle:  'N8 Cashout Calculator',
+    eligible:      '✓ Đủ điều kiện cashout',
+    ineligible:    '✗ Chưa đủ điều kiện (cần ≥60%)',
+    labelPot:      'Pot size (VNĐ)',
+    labelRake:     'Rake (%)',
+    labelJpf:      'Jackpot fee (%)',
+    bkPot:         'Pot gốc',
+    bkNetpot:      'Net pot (sau rake & jackpot fee)',
+    bkEquity:      'Equity P1',
+    bkCashout:     'Cashout = net pot × equity × 99%',
+    bkFee:         'Phí N8 (1%)',
+    distTitle:     'Phân bổ tay bài thắng',
+    distP1:        'Cửa Trên thắng',
+    distP2:        'Cửa Dưới thắng',
+    c72TotalPot:   'Total Pot (VNĐ)',
+    c72Turn:       'Turn Insurance',
+    c72River:      'River Insurance',
+    c72Outs:       'Số outs',
+    c72SummaryTitle:'Bảng tóm tắt — tất cả outs 1–13',
+    c72OutsCol:    'Outs',
+    c72Fee:        'Phí (3.5%)',
+    c72HitTurn:    'Hit% Turn (/45)',
+    c72HitRiver:   'Hit% River (/44)',
+    c72FairTurn:   'Fair Turn',
+    c72FairRiver:  'Fair River',
+    c72Edge:       'Edge (Turn)',
+    c72ChartTitle: '72 Club vs Fair Value',
+    c72Insurance:  'Phí bảo hiểm',
+    c72HitPct:     'Xác suất hit',
+    c72FairPrice:  'Fair price',
+    c72HouseEdge:  'House edge',
+    chartOuts:     'Số outs',
+    chartLegIns:   '72 Club (3.5%/out)',
+    chartFairTurn: 'Fair Turn (/45)',
+    chartFairRiver:'Fair River (/44)',
+  },
+  en: {
+    subtitle:      'N8 EV Cashout · 72 Club Insurance — offline, no server needed',
+    tabN8:         'N8 EV Cashout',
+    tabClub72:     '72 Club Insurance',
+    labelP1:       'Player 1 (Top)',
+    labelP2:       'Player 2 (Bottom)',
+    labelFlop:     'Flop',
+    labelTurnOpt:  '(optional)',
+    deckTitle:     'Pick a card — click a slot first, then a card',
+    btnClearAll:   'Clear All',
+    btnEnumFlop:   'Enumerate 990 Combinations (Flop)',
+    btnEnumTurn:   'Enumerate 44 Combinations (Turn)',
+    placeholder:   'Select 7 cards then click Enumerate to calculate equity.',
+    loadingFlop:   'Enumerating 990 combinations (Flop)…',
+    loadingTurn:   'Enumerating 44 combinations (Turn)…',
+    playerP1:      'Player 1 (Top)',
+    playerP2:      'Player 2 (Bottom)',
+    statWins:      'P1 wins',
+    statTies:      'Ties',
+    statLoss:      'P2 wins',
+    statFlop:      'Flop — 990 combos',
+    statTurn:      'Turn — 44 combos',
+    cashoutTitle:  'N8 Cashout Calculator',
+    eligible:      '✓ Eligible for cashout',
+    ineligible:    '✗ Not eligible (need ≥60%)',
+    labelPot:      'Pot size (VND)',
+    labelRake:     'Rake (%)',
+    labelJpf:      'Jackpot fee (%)',
+    bkPot:         'Pot',
+    bkNetpot:      'Net pot (after rake & jackpot fee)',
+    bkEquity:      'P1 equity',
+    bkCashout:     'Cashout = net pot × equity × 99%',
+    bkFee:         'N8 fee (1%)',
+    distTitle:     'Winning hand distribution',
+    distP1:        'Player 1 wins',
+    distP2:        'Player 2 wins',
+    c72TotalPot:   'Total Pot (VND)',
+    c72Turn:       'Turn Insurance',
+    c72River:      'River Insurance',
+    c72Outs:       'Outs',
+    c72SummaryTitle:'Summary table — all outs 1–13',
+    c72OutsCol:    'Outs',
+    c72Fee:        'Fee (3.5%)',
+    c72HitTurn:    'Hit% Turn (/45)',
+    c72HitRiver:   'Hit% River (/44)',
+    c72FairTurn:   'Fair Turn',
+    c72FairRiver:  'Fair River',
+    c72Edge:       'Edge (Turn)',
+    c72ChartTitle: '72 Club vs Fair Value',
+    c72Insurance:  'Insurance cost',
+    c72HitPct:     'Hit probability',
+    c72FairPrice:  'Fair price',
+    c72HouseEdge:  'House edge',
+    chartOuts:     'Outs',
+    chartLegIns:   '72 Club (3.5%/out)',
+    chartFairTurn: 'Fair Turn (/45)',
+    chartFairRiver:'Fair River (/44)',
+  }
+};
+
+let lang = 'vi';
+function t(key) { return STRINGS[lang][key] || key; }
+
 // =============================================================
 // SECTION 1 — Constants & Card Encoding
 // card_index = suit × 13 + rank
@@ -601,8 +743,8 @@ function enumerate990(p1Cards, p2Cards, flopCards) {
   // deck.length must === 45
 
   let p1Wins = 0, p2Wins = 0, ties = 0;
-  const samples    = [];           // first 15 combinations for sample table
-  const p1WinDist  = Array(9).fill(0); // hand type distribution when P1 wins
+  const p1WinDist = Array(9).fill(0);
+  const p2WinDist = Array(9).fill(0);
 
   for (let i = 0; i < deck.length; i++) {
     for (let j = i+1; j < deck.length; j++) {
@@ -612,9 +754,8 @@ function enumerate990(p1Cards, p2Cards, flopCards) {
       const s2  = best7([...p2Cards, ...board]);
       const cmp = compare(s1, s2);
       if      (cmp > 0) { p1Wins++; p1WinDist[s1[0]]++; }
-      else if (cmp < 0)   p2Wins++;
-      else                ties++;
-      if (samples.length < 15) samples.push({ turn, river, s1, s2, cmp });
+      else if (cmp < 0) { p2Wins++; p2WinDist[s2[0]]++; }
+      else              { ties++; }
     }
   }
   const total = p1Wins + p2Wins + ties;
@@ -623,8 +764,7 @@ function enumerate990(p1Cards, p2Cards, flopCards) {
     deckSize: deck.length,
     equity1: (p1Wins + ties/2) / total,
     equity2: (p2Wins + ties/2) / total,
-    samples,
-    p1WinDist,
+    p1WinDist, p2WinDist,
   };
 }
 window.enumerate990 = enumerate990;
@@ -637,8 +777,8 @@ function enumerateTurn(p1Cards, p2Cards, flopCards, turnCard) {
   // deck.length must === 44
 
   let p1Wins = 0, p2Wins = 0, ties = 0;
-  const samples   = [];
   const p1WinDist = Array(9).fill(0);
+  const p2WinDist = Array(9).fill(0);
 
   for (let i = 0; i < deck.length; i++) {
     const river = deck[i];
@@ -647,18 +787,16 @@ function enumerateTurn(p1Cards, p2Cards, flopCards, turnCard) {
     const s2  = best7([...p2Cards, ...board]);
     const cmp = compare(s1, s2);
     if      (cmp > 0) { p1Wins++; p1WinDist[s1[0]]++; }
-    else if (cmp < 0)   p2Wins++;
-    else                ties++;
-    if (samples.length < 15) samples.push({ turn: turnCard, river, s1, s2, cmp });
+    else if (cmp < 0) { p2Wins++; p2WinDist[s2[0]]++; }
+    else              { ties++; }
   }
-  const total = p1Wins + p2Wins + ties; // === 44
+  const total = p1Wins + p2Wins + ties;
   return {
     p1Wins, p2Wins, ties, total,
     deckSize: deck.length,
     equity1: (p1Wins + ties/2) / total,
     equity2: (p2Wins + ties/2) / total,
-    samples,
-    p1WinDist,
+    p1WinDist, p2WinDist,
     mode: 'turn',
   };
 }
@@ -757,12 +895,10 @@ function renderCalcBtn() {
   const hasTurn = state.slots[7] !== null;
   if (filled >= 7) {
     btn.disabled = false;
-    btn.textContent = hasTurn
-      ? 'Enumerate 44 Combinations (Turn)'
-      : 'Enumerate 990 Combinations (Flop)';
+    btn.textContent = hasTurn ? t('btnEnumTurn') : t('btnEnumFlop');
   } else {
     btn.disabled = true;
-    btn.textContent = 'Enumerate 990 Combinations (Flop)';
+    btn.textContent = t('btnEnumFlop');
   }
 }
 
@@ -803,7 +939,7 @@ function onDeckCardClick(card) {
 
 function resetResults() {
   document.getElementById('results-area').innerHTML =
-    '<div class="results-placeholder">Chọn đủ 7 lá rồi nhấn Enumerate để tính equity.</div>';
+    `<div class="results-placeholder">${t('placeholder')}</div>`;
 }
 
 function loadPreset(preset) {
@@ -822,6 +958,25 @@ function clearAll() {
   resetResults();
   render();
 }
+
+// ── Language switch ──────────────────────────────────────────
+
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.getElementById('lang-btn').textContent = lang === 'vi' ? 'EN' : 'VI';
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  renderCalcBtn();
+  if (state.lastResult) renderResults(state.lastResult);
+  else resetResults();
+  render72All();
+}
+
+document.getElementById('lang-btn').addEventListener('click', () => {
+  lang = lang === 'vi' ? 'en' : 'vi';
+  applyLang();
+});
 
 // ── Presets ──────────────────────────────────────────────────
 
@@ -850,12 +1005,6 @@ function fmtVND(n) {
   return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-function cardSpan(idx) {
-  const suit  = Math.floor(idx / 13);
-  const isRed = suit === 1 || suit === 2;
-  return `<span class="${isRed ? 'card-red' : ''}">${cardName(idx)}</span>`;
-}
-
 // ── renderCashout: called on pot/rake/jackpot input change ────
 
 function renderCashout(equity1) {
@@ -881,99 +1030,87 @@ function renderResults(res) {
   const pct2 = (res.equity2 * 100).toFixed(2);
   const eligible = res.equity1 >= 0.60;
 
-  // ── Sample table rows ──
-  const sampleRows = res.samples.map((s, i) => {
-    const resClass = s.cmp > 0 ? 'result-p1' : s.cmp < 0 ? 'result-p2' : 'result-tie';
-    const resText  = s.cmp > 0 ? 'P1 thắng'  : s.cmp < 0 ? 'P2 thắng'  : 'Hòa';
-    return `<tr>
-      <td>${i+1}</td>
-      <td>${cardSpan(s.turn)}</td>
-      <td>${cardSpan(s.river)}</td>
-      <td>${HAND_NAMES[s.s1[0]]}</td>
-      <td>${HAND_NAMES[s.s2[0]]}</td>
-      <td class="${resClass}">${resText}</td>
-    </tr>`;
-  }).join('');
+  // ── Dual hand distribution bars ──
+  function buildDistCol(winDist, wins, colorClass) {
+    const maxD = Math.max(...winDist, 1);
+    return HAND_NAMES.map((name, i) => {
+      const count = winDist[i];
+      const pct   = (count / maxD * 100).toFixed(1);
+      return `<div class="dist-row">
+        <div class="dist-name">${name}</div>
+        <div class="dist-track"><div class="dist-fill ${colorClass}" style="width:${pct}%"></div></div>
+        <div class="dist-count">${count}</div>
+      </div>`;
+    }).reverse().join('');
+  }
 
-  // ── Hand distribution bars ──
-  const maxDist = Math.max(...res.p1WinDist, 1);
-  const distRows = HAND_NAMES.map((name, i) => {
-    const count = res.p1WinDist[i];
-    const pct   = (count / maxDist * 100).toFixed(1);
-    return `<div class="dist-row">
-      <div class="dist-name">${name}</div>
-      <div class="dist-track"><div class="dist-fill" style="width:${pct}%"></div></div>
-      <div class="dist-count">${count}</div>
-    </div>`;
-  }).reverse().join(''); // reverse: show SF at top
+  const distP1 = buildDistCol(res.p1WinDist, res.p1Wins, 'p1');
+  const distP2 = buildDistCol(res.p2WinDist, res.p2Wins, 'p2');
 
   document.getElementById('results-area').innerHTML = `
     <div class="results-panel">
 
-      <!-- Equity visualization -->
       <div class="eq-section">
         <div class="eq-row">
-          <div class="eq-player p1">Cửa Trên (P1)</div>
+          <div class="eq-player p1">${t('playerP1')}</div>
           <div class="eq-bar-track"><div class="eq-bar-fill p1" style="width:${pct1}%"></div></div>
           <div class="eq-pct p1">${pct1}%</div>
         </div>
         <div class="eq-row">
-          <div class="eq-player p2">Cửa Dưới (P2)</div>
+          <div class="eq-player p2">${t('playerP2')}</div>
           <div class="eq-bar-track"><div class="eq-bar-fill p2" style="width:${pct2}%"></div></div>
           <div class="eq-pct p2">${pct2}%</div>
         </div>
         <div class="stats-row">
-          <span>P1 thắng: ${res.p1Wins}</span>
-          <span>Hòa: ${res.ties}</span>
-          <span>P2 thắng: ${res.p2Wins}</span>
-          <span>Tổng: ${res.total} (${res.mode === 'turn' ? 'Turn — 44 combos' : 'Flop — 990 combos'})</span>
+          <span>${t('statWins')}: ${res.p1Wins}</span>
+          <span>${t('statTies')}: ${res.ties}</span>
+          <span>${t('statLoss')}: ${res.p2Wins}</span>
+          <span>${res.total} (${res.mode === 'turn' ? t('statTurn') : t('statFlop')})</span>
         </div>
       </div>
 
-      <!-- Cashout calculator -->
       <div class="cashout-section">
         <div class="cashout-header">
-          <span class="cashout-title">N8 Cashout Calculator</span>
+          <span class="cashout-title">${t('cashoutTitle')}</span>
           <span class="badge ${eligible ? 'eligible' : 'ineligible'}">
-            ${eligible ? '✓ Đủ điều kiện cashout' : '✗ Chưa đủ điều kiện (cần ≥60%)'}
+            ${eligible ? t('eligible') : t('ineligible')}
           </span>
         </div>
         <div class="cashout-inputs">
           <div class="c-input-group">
-            <label>Pot size (VNĐ)</label>
+            <label>${t('labelPot')}</label>
             <input id="co-pot" type="number" min="0" placeholder="1000000" value="1000000">
           </div>
           <div class="c-input-group">
-            <label>Rake (%)</label>
+            <label>${t('labelRake')}</label>
             <input id="co-rake" type="number" min="0" max="100" step="0.1" placeholder="3" value="3">
           </div>
           <div class="c-input-group">
-            <label>Jackpot fee (%)</label>
+            <label>${t('labelJpf')}</label>
             <input id="co-jpf" type="number" min="0" max="100" step="0.1" placeholder="1" value="1">
           </div>
         </div>
         <div class="breakdown">
-          <div class="bk-row"><span class="bk-label">Pot gốc</span><span class="bk-value" id="bk-pot">—</span></div>
-          <div class="bk-row"><span class="bk-label">Net pot (sau rake &amp; jackpot fee)</span><span class="bk-value" id="bk-netpot">—</span></div>
-          <div class="bk-row"><span class="bk-label">Equity P1</span><span class="bk-value" id="bk-equity">${pct1}%</span></div>
-          <div class="bk-row cashout-row"><span class="bk-label">Cashout = net pot × equity × 99%</span><span class="bk-value" id="bk-cashout">—</span></div>
-          <div class="bk-row fee-row"><span class="bk-label">Phí N8 (1%)</span><span class="bk-value" id="bk-fee">—</span></div>
+          <div class="bk-row"><span class="bk-label">${t('bkPot')}</span><span class="bk-value" id="bk-pot">—</span></div>
+          <div class="bk-row"><span class="bk-label">${t('bkNetpot')}</span><span class="bk-value" id="bk-netpot">—</span></div>
+          <div class="bk-row"><span class="bk-label">${t('bkEquity')}</span><span class="bk-value" id="bk-equity">${pct1}%</span></div>
+          <div class="bk-row cashout-row"><span class="bk-label">${t('bkCashout')}</span><span class="bk-value" id="bk-cashout">—</span></div>
+          <div class="bk-row fee-row"><span class="bk-label">${t('bkFee')}</span><span class="bk-value" id="bk-fee">—</span></div>
         </div>
       </div>
 
-      <!-- Sample table -->
-      <div class="sample-section">
-        <div class="section-title">15 combinations đầu tiên</div>
-        <table class="sample-table">
-          <thead><tr><th>#</th><th>Turn</th><th>River</th><th>Tay P1</th><th>Tay P2</th><th>Kết quả</th></tr></thead>
-          <tbody>${sampleRows}</tbody>
-        </table>
-      </div>
-
-      <!-- Hand distribution -->
       <div class="dist-section">
-        <div class="section-title">Phân bổ tay bài khi P1 thắng (${res.p1Wins}/${res.total} combinations)</div>
-        ${distRows}
+        <div class="section-title">${t('distTitle')}</div>
+        <div class="dist-grid">
+          <div>
+            <div class="dist-col-header p1">${t('distP1')} (${res.p1Wins})</div>
+            ${distP1}
+          </div>
+          <div>
+            <div class="dist-col-header p2">${t('distP2')} (${res.p2Wins})</div>
+            ${distP2}
+          </div>
+        </div>
       </div>
 
     </div>
@@ -998,11 +1135,8 @@ document.getElementById('btn-calc').addEventListener('click', () => {
   const flop = state.slots.slice(4,7);
   const turn = state.slots[7]; // null = Flop mode
 
-  const modeLabel = turn !== null
-    ? 'Đang enumerate 44 combinations (Turn)…'
-    : 'Đang enumerate 990 combinations (Flop)…';
   document.getElementById('results-area').innerHTML =
-    `<div class="results-placeholder">${modeLabel}</div>`;
+    `<div class="results-placeholder">${turn !== null ? t('loadingTurn') : t('loadingFlop')}</div>`;
 
   setTimeout(() => {
     const res = turn !== null
@@ -1051,19 +1185,19 @@ function render72Street(resultId, outs, pot, denom) {
   const r = c72Calc(pot, outs, denom);
   document.getElementById(resultId).innerHTML = `
     <div class="c72-metric">
-      <div class="c72-metric-label">Phí bảo hiểm</div>
+      <div class="c72-metric-label">${t('c72Insurance')}</div>
       <div class="c72-metric-value insurance">${fmtVND(r.insurance)} đ</div>
     </div>
     <div class="c72-metric">
-      <div class="c72-metric-label">Xác suất hit (${outs}/${denom})</div>
+      <div class="c72-metric-label">${t('c72HitPct')} (${outs}/${denom})</div>
       <div class="c72-metric-value hitpct">${r.hitPct.toFixed(2)}%</div>
     </div>
     <div class="c72-metric">
-      <div class="c72-metric-label">Fair price (pot × ${outs}/${denom})</div>
+      <div class="c72-metric-label">${t('c72FairPrice')} (pot × ${outs}/${denom})</div>
       <div class="c72-metric-value fair">${fmtVND(r.fairPrice)} đ</div>
     </div>
     <div class="c72-metric">
-      <div class="c72-metric-label">House edge</div>
+      <div class="c72-metric-label">${t('c72HouseEdge')}</div>
       <div class="c72-metric-value edge">${fmtVND(r.edge)} đ (${r.edgePct.toFixed(1)}%)</div>
     </div>
   `;
@@ -1146,7 +1280,7 @@ function render72Chart(pot, turnOuts) {
       <line x1="${pl}" y1="${pt}" x2="${pl}" y2="${pt + cH}" class="chart-axis"/>
       <line x1="${pl}" y1="${pt + cH}" x2="${W - pr}" y2="${pt + cH}" class="chart-axis"/>
       <!-- Axis labels -->
-      <text x="${W / 2}" y="${H - 4}" class="chart-label" text-anchor="middle">Số outs</text>
+      <text x="${W / 2}" y="${H - 4}" class="chart-label" text-anchor="middle">${t('chartOuts')}</text>
       <!-- Current outs indicator -->
       <line x1="${cx}" y1="${pt}" x2="${cx}" y2="${pt + cH}" stroke="#4a9edd" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
       <!-- Fair value Turn /45 (green solid) -->
@@ -1161,11 +1295,11 @@ function render72Chart(pot, turnOuts) {
       <circle cx="${cx}" cy="${yPos(pot * turnOuts / 44).toFixed(1)}" r="3" fill="none" stroke="#1db97a" stroke-width="1.5"/>
       <!-- Legend -->
       <line x1="${pl}" y1="${pt - 10}" x2="${pl + 22}" y2="${pt - 10}" stroke="#e05555" stroke-width="2.5"/>
-      <text x="${pl + 26}" y="${pt - 6}" class="chart-label" fill="#e05555">72 Club (3.5%/out)</text>
+      <text x="${pl + 26}" y="${pt - 6}" class="chart-label" fill="#e05555">${t('chartLegIns')}</text>
       <line x1="${pl + 145}" y1="${pt - 10}" x2="${pl + 167}" y2="${pt - 10}" stroke="#1db97a" stroke-width="2"/>
-      <text x="${pl + 171}" y="${pt - 6}" class="chart-label" fill="#1db97a">Fair Turn (/45)</text>
+      <text x="${pl + 171}" y="${pt - 6}" class="chart-label" fill="#1db97a">${t('chartFairTurn')}</text>
       <line x1="${pl + 260}" y1="${pt - 10}" x2="${pl + 282}" y2="${pt - 10}" stroke="#1db97a" stroke-width="2" stroke-dasharray="5,3"/>
-      <text x="${pl + 286}" y="${pt - 6}" class="chart-label" fill="#1db97a">Fair River (/44)</text>
+      <text x="${pl + 286}" y="${pt - 6}" class="chart-label" fill="#1db97a">${t('chartFairRiver')}</text>
     </svg>
   `;
 }
