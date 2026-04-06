@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poker Equity & Insurance Tool</title>
+  <style>
+    :root {
+      --bg:    #0a0d14;
+      --bg2:   #111520;
+      --bg3:   #181d2e;
+      --green: #1db97a;
+      --red:   #e05555;
+      --amber: #e0a030;
+      --blue:  #4a9edd;
+      --muted: #6b7394;
+      --text:  #dde2f0;
+      --mono:  'Courier New', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: var(--bg2);
+      border-bottom: 1px solid #1e2540;
+      padding: 16px 20px;
+    }
+    .header h1 { font-size: 18px; font-weight: 700; letter-spacing: .3px; }
+    .header p  { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      background: var(--bg2);
+      border-bottom: 1px solid #1e2540;
+      padding: 0 20px;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 10px 16px;
+      transition: color .15s, border-color .15s;
+    }
+    .tab-btn.active { color: var(--text); border-bottom-color: var(--blue); }
+    .tab-btn:hover:not(.active) { color: var(--text); }
+
+    /* ── Sections ── */
+    .tab-section { display: none; padding: 20px; max-width: 900px; margin: 0 auto; }
+    .tab-section.active { display: block; }
+
+    /* ── Card Selector ── */
+    .selector-area {
+      background: var(--bg2);
+      border: 1px solid #1e2540;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .selector-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .selector-row:last-child { margin-bottom: 0; }
+    .selector-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      width: 120px;
+      flex-shrink: 0;
+    }
+    .selector-label.p1 { color: var(--green); }
+    .selector-label.p2   { color: var(--red); }
+    .selector-label.flop  { color: var(--amber); }
+    .selector-label.turn  { color: var(--blue); }
+    .slots { display: flex; gap: 8px; }
+
+    /* ── Card Slot ── */
+    .card-slot {
+      width: 52px;
+      height: 68px;
+      border-radius: 6px;
+      border: 2px dashed #2a3050;
+      background: var(--bg3);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      transition: border-color .12s, background .12s;
+      position: relative;
+      user-select: none;
+    }
+    .card-slot:hover { border-color: #3a4570; }
+    .card-slot.active {
+      border-style: solid;
+      box-shadow: 0 0 0 2px rgba(74,158,221,.4);
+    }
+    .card-slot.active.p1  { border-color: var(--green); box-shadow: 0 0 0 2px rgba(29,185,122,.35); }
+    .card-slot.active.p2  { border-color: var(--red);   box-shadow: 0 0 0 2px rgba(224,85,85,.35); }
+    .card-slot.active.flop{ border-color: var(--amber); box-shadow: 0 0 0 2px rgba(224,160,48,.35); }
+    .card-slot.filled.p1  { border: 2px solid var(--green); background: rgba(29,185,122,.12); }
+    .card-slot.filled.p2  { border: 2px solid var(--red);   background: rgba(224,85,85,.12); }
+    .card-slot.filled.flop{ border: 2px solid var(--amber); background: rgba(224,160,48,.12); }
+    .card-slot.filled.turn{ border: 2px solid var(--blue);  background: rgba(74,158,221,.12); }
+    .card-slot.active.turn{ border-color: var(--blue); box-shadow: 0 0 0 2px rgba(74,158,221,.35); }
+    .card-slot .slot-card-label { line-height: 1; }
+    .card-slot .suit-red   { color: #f06060; }
+    .card-slot .suit-black { color: var(--text); }
+    .card-slot .empty-hint { font-size: 10px; color: #3a4570; font-family: sans-serif; }
+
+    /* ── Deck Picker ── */
+    .deck-area {
+      background: var(--bg2);
+      border: 1px solid #1e2540;
+      border-radius: 8px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+    .deck-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 10px;
+    }
+    .deck-grid {
+      display: grid;
+      grid-template-columns: repeat(13, 1fr);
+      gap: 3px;
+    }
+    .deck-card {
+      aspect-ratio: 3/4;
+      border-radius: 4px;
+      border: 1px solid #1e2540;
+      background: var(--bg3);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      transition: opacity .12s, border-color .1s, background .1s;
+      user-select: none;
+      line-height: 1;
+      padding: 2px;
+      text-align: center;
+    }
+    .deck-card:hover:not(.used) { border-color: #4a5580; background: #222840; }
+    .deck-card.used { opacity: 0.22; pointer-events: none; }
+    /* Used cards (assigned to a slot) — visible highlight, not clickable */
+    .deck-card.used-p1  { border-color: var(--green); background: rgba(29,185,122,.18); opacity: 1; pointer-events: none; }
+    .deck-card.used-p2  { border-color: var(--red);   background: rgba(224,85,85,.18);  opacity: 1; pointer-events: none; }
+    .deck-card.used-flop{ border-color: var(--amber); background: rgba(224,160,48,.18); opacity: 1; pointer-events: none; }
+    .deck-card.used-turn{ border-color: var(--blue);  background: rgba(74,158,221,.18); opacity: 1; pointer-events: none; }
+    .deck-card.suit-red   { color: #f06060; }
+    .deck-card.suit-black { color: var(--text); }
+
+    @media (max-width: 480px) {
+      .deck-card { font-size: 8px; }
+      .tab-section { padding: 12px; }
+      .selector-label { width: 72px; font-size: 11px; }
+      .card-slot { width: 42px; height: 56px; font-size: 11px; }
+      .selector-row { flex-wrap: wrap; gap: 6px; }
+      .slots { gap: 5px; }
+      .btn-preset { font-size: 11px; padding: 6px 10px; }
+      .tabs { padding: 0 10px; }
+      .tab-btn { padding: 10px 12px; font-size: 12px; }
+    }
+
+    /* ── Preset & Buttons ── */
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .btn {
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 7px 14px;
+      transition: opacity .12s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn:disabled { opacity: .35; cursor: not-allowed; }
+    .btn-preset { background: var(--bg3); color: var(--text); border: 1px solid #2a3050; }
+    .btn-clear  { background: var(--bg3); color: var(--muted); border: 1px solid #2a3050; }
+    .btn-calc   {
+      background: var(--blue);
+      color: #fff;
+      font-size: 13px;
+      padding: 9px 20px;
+    }
+
+    /* ── Results area ── */
+    .results-area {
+      background: var(--bg2);
+      border: 1px solid #1e2540;
+      border-radius: 8px;
+      min-height: 80px;
+    }
+    .results-placeholder {
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: 13px;
+      padding: 28px 20px;
+    }
+    .results-panel { padding: 18px 20px; }
+
+    /* Equity bars */
+    .eq-section { margin-bottom: 18px; }
+    .eq-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .eq-player { font-size: 12px; font-weight: 600; width: 130px; flex-shrink: 0; }
+    .eq-player.p1 { color: var(--green); }
+    .eq-player.p2 { color: var(--red); }
+    .eq-bar-track { flex: 1; height: 20px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+    .eq-bar-fill { height: 100%; border-radius: 4px; }
+    .eq-bar-fill.p1 { background: var(--green); }
+    .eq-bar-fill.p2 { background: var(--red); }
+    .eq-pct { font-family: var(--mono); font-size: 15px; font-weight: 700; width: 64px; text-align: right; }
+    .eq-pct.p1 { color: var(--green); }
+    .eq-pct.p2 { color: var(--red); }
+    .stats-row { font-size: 12px; color: var(--muted); padding: 4px 0 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .stats-row span { background: var(--bg3); border-radius: 4px; padding: 3px 8px; }
+
+    /* Cashout calculator */
+    .cashout-section {
+      background: var(--bg3); border-radius: 6px; padding: 14px; margin-bottom: 16px;
+      border: 1px solid #1e2540;
+    }
+    .cashout-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+    .cashout-title { font-size: 13px; font-weight: 600; }
+    .badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px; }
+    .badge.eligible   { background: rgba(29,185,122,.18); color: var(--green); border: 1px solid var(--green); }
+    .badge.ineligible { background: rgba(224,85,85,.18);  color: var(--red);   border: 1px solid var(--red); }
+    .cashout-inputs { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+    .c-input-group { display: flex; flex-direction: column; gap: 4px; }
+    .c-input-group label { font-size: 11px; color: var(--muted); }
+    .c-input-group input {
+      background: var(--bg2); border: 1px solid #2a3050; border-radius: 4px;
+      color: var(--text); font-family: var(--mono); font-size: 12px;
+      padding: 5px 8px; width: 140px;
+    }
+    .c-input-group input:focus { outline: none; border-color: var(--blue); }
+    .breakdown { border-top: 1px solid #1e2540; padding-top: 10px; }
+    .bk-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px dashed #1e2540; font-size: 12px; }
+    .bk-row:last-child { border-bottom: none; padding-top: 8px; }
+    .bk-label { color: var(--muted); font-size: 11px; }
+    .bk-value { font-family: var(--mono); color: var(--text); }
+    .bk-row.cashout-row .bk-value { color: var(--green); font-size: 16px; font-weight: 700; }
+    .bk-row.fee-row .bk-value     { color: var(--red); }
+
+    /* Sample table */
+    .sample-section { margin-bottom: 16px; }
+    .section-title {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px;
+    }
+    .sample-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .sample-table th {
+      background: var(--bg3); color: var(--muted); font-size: 10px; font-weight: 600;
+      padding: 6px 8px; text-align: left; border-bottom: 1px solid #1e2540;
+      text-transform: uppercase; letter-spacing: .4px;
+    }
+    .sample-table td { padding: 5px 8px; border-bottom: 1px solid #161b2e; font-family: var(--mono); }
+    .sample-table tr:last-child td { border-bottom: none; }
+    .result-p1  { color: var(--green); font-weight: 700; }
+    .result-p2  { color: var(--red);   font-weight: 700; }
+    .result-tie { color: var(--amber); font-weight: 700; }
+    .card-red   { color: #f06060; }
+
+    /* Hand distribution */
+    .dist-section { margin-bottom: 4px; }
+    .dist-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+    .dist-name  { font-size: 11px; color: var(--muted); width: 140px; flex-shrink: 0; text-align: right; }
+    .dist-track { flex: 1; height: 13px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+    .dist-fill  { height: 100%; background: var(--green); border-radius: 3px; opacity: .75; }
+    .dist-count { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 36px; text-align: right; }
+
+    /* ── 72 Club tab ── */
+    .c72-block {
+      background: var(--bg2); border: 1px solid #1e2540;
+      border-radius: 8px; padding: 16px; margin-bottom: 14px;
+    }
+    .c72-block-title {
+      font-size: 13px; font-weight: 700; margin-bottom: 14px;
+    }
+    .c72-block-title.turn  { color: var(--amber); }
+    .c72-block-title.river { color: var(--blue); }
+    .c72-pot-row { display: flex; align-items: center; gap: 12px; }
+    .c72-pot-row label { font-size: 12px; color: var(--muted); width: 130px; flex-shrink: 0; }
+    .c72-input {
+      background: var(--bg3); border: 1px solid #2a3050; border-radius: 5px;
+      color: var(--text); font-family: var(--mono); font-size: 13px;
+      padding: 6px 10px; width: 180px;
+    }
+    .c72-input:focus { outline: none; border-color: var(--blue); }
+
+    /* Slider row */
+    .c72-slider-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .c72-slider-row label { font-size: 12px; color: var(--muted); width: 80px; flex-shrink: 0; }
+    .c72-slider {
+      flex: 1; accent-color: var(--amber); cursor: pointer;
+    }
+    .c72-num-input {
+      background: var(--bg3); border: 1px solid #2a3050; border-radius: 4px;
+      color: var(--text); font-family: var(--mono); font-size: 13px; font-weight: 700;
+      padding: 4px 8px; width: 52px; text-align: center;
+    }
+    .c72-num-input:focus { outline: none; border-color: var(--amber); }
+
+    /* Result card */
+    .c72-result {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px; background: var(--bg3); border-radius: 6px; padding: 12px;
+    }
+    @media (max-width:480px) { .c72-result { grid-template-columns: 1fr; } }
+    .c72-metric { display: flex; flex-direction: column; gap: 2px; }
+    .c72-metric-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
+    .c72-metric-value { font-family: var(--mono); font-size: 15px; font-weight: 700; }
+    .c72-metric-value.insurance { color: var(--red); }
+    .c72-metric-value.hitpct    { color: var(--amber); }
+    .c72-metric-value.fair      { color: var(--green); }
+    .c72-metric-value.edge      { color: var(--muted); }
+
+    /* Summary table */
+    .c72-summary-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .c72-summary-table th {
+      background: var(--bg3); color: var(--muted); font-size: 10px; font-weight: 600;
+      padding: 6px 8px; text-align: right; border-bottom: 1px solid #1e2540;
+      text-transform: uppercase; letter-spacing: .4px;
+    }
+    .c72-summary-table th:first-child { text-align: center; }
+    .c72-summary-table td {
+      padding: 5px 8px; border-bottom: 1px solid #161b2e;
+      font-family: var(--mono); font-size: 11px; text-align: right;
+    }
+    .c72-summary-table td:first-child { text-align: center; font-weight: 700; color: var(--text); }
+    .c72-summary-table tr:last-child td { border-bottom: none; }
+    .c72-summary-table tr.highlight-turn  td { background: rgba(224,160,48,.1); }
+    .c72-summary-table tr.highlight-river td { background: rgba(74,158,221,.1); }
+    .c72-summary-table tr.highlight-both  td { background: rgba(224,160,48,.15); }
+
+    /* SVG chart */
+    .c72-chart-wrap { overflow-x: auto; }
+    .c72-chart-wrap svg text { font-family: 'Courier New', monospace; }
+    .chart-label { font-size: 10px; fill: #6b7394; }
+    .chart-grid  { stroke: #1e2540; stroke-width: 0.5; }
+    .chart-axis  { stroke: #2a3050; stroke-width: 1; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Poker Equity &amp; Insurance Tool</h1>
+    <p>N8 EV Cashout · 72 Club Insurance — chạy offline, không cần server</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="n8">N8 EV Cashout</button>
+    <button class="tab-btn" data-tab="club72">72 Club Insurance</button>
+  </div>
+
+  <!-- ══ TAB N8 ════════════════════════════════════════════════ -->
+  <div id="tab-n8" class="tab-section active">
+
+    <!-- Card Selector -->
+    <div class="selector-area">
+      <div class="selector-row">
+        <span class="selector-label p1">Cửa Trên (P1)</span>
+        <div class="slots" id="slots-p1"></div>
+      </div>
+      <div class="selector-row">
+        <span class="selector-label p2">Cửa Dưới (P2)</span>
+        <div class="slots" id="slots-p2"></div>
+      </div>
+      <div class="selector-row">
+        <span class="selector-label flop">Flop</span>
+        <div class="slots" id="slots-flop"></div>
+      </div>
+      <div class="selector-row">
+        <span class="selector-label turn">Turn <span style="font-weight:400;color:var(--muted)">(tuỳ chọn)</span></span>
+        <div class="slots" id="slots-turn"></div>
+      </div>
+    </div>
+
+    <!-- Deck Picker -->
+    <div class="deck-area">
+      <div class="deck-title">Chọn lá bài — click slot trước, rồi click lá</div>
+      <div class="deck-grid" id="deck-grid"></div>
+    </div>
+
+    <!-- Preset + actions -->
+    <div class="btn-row">
+      <button class="btn btn-preset" id="btn-preset1">A♠A♥ vs 7♦8♦ (Flop: 9♦6♣2♠)</button>
+      <button class="btn btn-preset" id="btn-preset2">K♠K♥ vs Q♦J♦ (Flop: A♦T♣2♠)</button>
+      <button class="btn btn-clear"  id="btn-clear">Xóa hết</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-calc" id="btn-calc" disabled>Enumerate 990 Combinations</button>
+    </div>
+
+    <!-- Results -->
+    <div class="results-area" id="results-area">
+      <div class="results-placeholder">Chọn đủ 7 lá rồi nhấn Enumerate để tính equity.</div>
+    </div>
+
+  </div><!-- /tab-n8 -->
+
+  <!-- ══ TAB 72 CLUB ══════════════════════════════════════════ -->
+  <div id="tab-club72" class="tab-section">
+
+    <!-- Pot input -->
+    <div class="c72-block">
+      <div class="c72-pot-row">
+        <label>Total Pot (VNĐ)</label>
+        <input class="c72-input" id="c72-pot" type="number" min="0" placeholder="1000000" value="1000000">
+      </div>
+    </div>
+
+    <!-- Turn Insurance -->
+    <div class="c72-block">
+      <div class="c72-block-title turn">Turn Insurance</div>
+      <div class="c72-slider-row">
+        <label>Số outs</label>
+        <input class="c72-slider" id="c72-turn-slider" type="range" min="1" max="13" value="8">
+        <input class="c72-num-input" id="c72-turn-num" type="number" min="1" max="13" value="8">
+      </div>
+      <div class="c72-result" id="c72-turn-result"></div>
+    </div>
+
+    <!-- River Insurance (independent) -->
+    <div class="c72-block">
+      <div class="c72-block-title river">River Insurance</div>
+      <div class="c72-slider-row">
+        <label>Số outs</label>
+        <input class="c72-slider" id="c72-river-slider" type="range" min="1" max="13" value="7">
+        <input class="c72-num-input" id="c72-river-num" type="number" min="1" max="13" value="7">
+      </div>
+      <div class="c72-result" id="c72-river-result"></div>
+    </div>
+
+    <!-- Summary table -->
+    <div class="c72-block">
+      <div class="section-title">Bảng tóm tắt — tất cả outs 1–13</div>
+      <div style="overflow-x:auto">
+        <table class="c72-summary-table" id="c72-summary-table">
+          <thead>
+            <tr>
+              <th>Outs</th>
+              <th>Phí (Turn/River)</th>
+              <th>Hit %</th>
+              <th>Fair Price</th>
+              <th>House Edge</th>
+            </tr>
+          </thead>
+          <tbody id="c72-summary-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Fairness chart -->
+    <div class="c72-block">
+      <div class="section-title">72 Club vs Fair Value</div>
+      <div class="c72-chart-wrap" id="c72-chart-wrap"></div>
+    </div>
+
+  </div><!-- /tab-club72 -->
+
+<script>
+// =============================================================
+// SECTION 1 — Constants & Card Encoding
+// card_index = suit × 13 + rank
+// suit: 0=♠  1=♥  2=♦  3=♣
+// rank: 0=2  1=3  2=4  3=5  4=6  5=7  6=8  7=9  8=T  9=J  10=Q  11=K  12=A
+// =============================================================
+
+const SUIT_SYMBOLS = ['♠', '♥', '♦', '♣'];
+const RANK_SYMBOLS = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
+
+const HAND_NAMES = [
+  'High Card',       // 0
+  'One Pair',        // 1
+  'Two Pair',        // 2
+  'Three of a Kind', // 3
+  'Straight',        // 4
+  'Flush',           // 5
+  'Full House',      // 6
+  'Four of a Kind',  // 7
+  'Straight Flush',  // 8
+];
+
+window.SUIT_SYMBOLS = SUIT_SYMBOLS;
+window.RANK_SYMBOLS = RANK_SYMBOLS;
+window.HAND_NAMES   = HAND_NAMES;
+
+function cardName(i) {
+  const suit = Math.floor(i / 13);
+  const rank = i % 13;
+  return RANK_SYMBOLS[rank] + SUIT_SYMBOLS[suit];
+}
+window.cardName = cardName;
+
+// =============================================================
+// SECTION 2 — Hand Evaluator
+// =============================================================
+
+function evaluate5(cards) {
+  const ranks = cards.map(c => c % 13);
+  const suits = cards.map(c => Math.floor(c / 13));
+
+  const rc = {};
+  ranks.forEach(r => { rc[r] = (rc[r] || 0) + 1; });
+
+  const byCount = Object.keys(rc)
+    .map(Number)
+    .sort((a, b) => rc[b] - rc[a] || b - a);
+
+  const counts  = byCount.map(r => rc[r]);
+  const isFlush = suits.every(s => s === suits[0]);
+
+  const uniq = [...new Set(ranks)].sort((a, b) => b - a);
+  let isStraight = false;
+  let straightHigh = -1;
+
+  if (uniq.length === 5) {
+    if (uniq[0] - uniq[4] === 4) { isStraight = true; straightHigh = uniq[0]; }
+    // Wheel A-2-3-4-5
+    if (uniq[0]===12 && uniq[1]===3 && uniq[2]===2 && uniq[3]===1 && uniq[4]===0) {
+      isStraight = true; straightHigh = 3;
+    }
+  }
+
+  if (isFlush && isStraight)           return [8, straightHigh];
+  if (counts[0] === 4)                 return [7, byCount[0], byCount[1]];
+  if (counts[0]===3 && counts[1]===2)  return [6, byCount[0], byCount[1]];
+  if (isFlush) { const s=[...ranks].sort((a,b)=>b-a); return [5,...s]; }
+  if (isStraight)                      return [4, straightHigh];
+  if (counts[0] === 3)                 return [3, byCount[0], byCount[1], byCount[2]];
+  if (counts[0]===2 && counts[1]===2)  return [2, byCount[0], byCount[1], byCount[2]];
+  if (counts[0] === 2)                 return [1, byCount[0], byCount[1], byCount[2], byCount[3]];
+  return [0, ...byCount];
+}
+window.evaluate5 = evaluate5;
+
+function compare(a, b) {
+  const len = Math.max(a.length, b.length);
+  for (let i = 0; i < len; i++) {
+    const x = a[i] ?? -1, y = b[i] ?? -1;
+    if (x > y) return  1;
+    if (x < y) return -1;
+  }
+  return 0;
+}
+window.compare = compare;
+
+function best7(cards) {
+  let best = null;
+  for (let i = 0; i < 7; i++)
+    for (let j = i+1; j < 7; j++) {
+      const five  = cards.filter((_, k) => k !== i && k !== j);
+      const score = evaluate5(five);
+      if (!best || compare(score, best) > 0) best = score;
+    }
+  return best;
+}
+window.best7 = best7;
+
+// =============================================================
+// SECTION 3 — Equity Calculator
+// N8 EV CASHOUT: equity ≥ 60%, pot ≥ 200BB, all-in tại flop
+// Equity = (p1Wins + ties/2) / 990
+// =============================================================
+
+function enumerate990(p1Cards, p2Cards, flopCards) {
+  const usedCards = new Set([...p1Cards, ...p2Cards, ...flopCards]);
+  const deck = Array.from({length:52}, (_,i)=>i).filter(c=>!usedCards.has(c));
+  // deck.length must === 45
+
+  let p1Wins = 0, p2Wins = 0, ties = 0;
+  const samples    = [];           // first 15 combinations for sample table
+  const p1WinDist  = Array(9).fill(0); // hand type distribution when P1 wins
+
+  for (let i = 0; i < deck.length; i++) {
+    for (let j = i+1; j < deck.length; j++) {
+      const turn = deck[i], river = deck[j];
+      const board = [...flopCards, turn, river];
+      const s1  = best7([...p1Cards, ...board]);
+      const s2  = best7([...p2Cards, ...board]);
+      const cmp = compare(s1, s2);
+      if      (cmp > 0) { p1Wins++; p1WinDist[s1[0]]++; }
+      else if (cmp < 0)   p2Wins++;
+      else                ties++;
+      if (samples.length < 15) samples.push({ turn, river, s1, s2, cmp });
+    }
+  }
+  const total = p1Wins + p2Wins + ties;
+  return {
+    p1Wins, p2Wins, ties, total,
+    deckSize: deck.length,
+    equity1: (p1Wins + ties/2) / total,
+    equity2: (p2Wins + ties/2) / total,
+    samples,
+    p1WinDist,
+  };
+}
+window.enumerate990 = enumerate990;
+
+// Turn all-in: 52 − 4 (hole) − 4 (flop+turn) = 44 lá còn lại
+// Enumerate C(44,1) = 44 river cards
+function enumerateTurn(p1Cards, p2Cards, flopCards, turnCard) {
+  const usedCards = new Set([...p1Cards, ...p2Cards, ...flopCards, turnCard]);
+  const deck = Array.from({length:52}, (_,i)=>i).filter(c=>!usedCards.has(c));
+  // deck.length must === 44
+
+  let p1Wins = 0, p2Wins = 0, ties = 0;
+  const samples   = [];
+  const p1WinDist = Array(9).fill(0);
+
+  for (let i = 0; i < deck.length; i++) {
+    const river = deck[i];
+    const board = [...flopCards, turnCard, river];
+    const s1  = best7([...p1Cards, ...board]);
+    const s2  = best7([...p2Cards, ...board]);
+    const cmp = compare(s1, s2);
+    if      (cmp > 0) { p1Wins++; p1WinDist[s1[0]]++; }
+    else if (cmp < 0)   p2Wins++;
+    else                ties++;
+    if (samples.length < 15) samples.push({ turn: turnCard, river, s1, s2, cmp });
+  }
+  const total = p1Wins + p2Wins + ties; // === 44
+  return {
+    p1Wins, p2Wins, ties, total,
+    deckSize: deck.length,
+    equity1: (p1Wins + ties/2) / total,
+    equity2: (p2Wins + ties/2) / total,
+    samples,
+    p1WinDist,
+    mode: 'turn',
+  };
+}
+window.enumerateTurn = enumerateTurn;
+
+// =============================================================
+// SECTION 4 — UI State
+// slots[0..1]=P1, slots[2..3]=P2, slots[4..6]=Flop
+// =============================================================
+
+const SLOT_GROUP = [0,0,1,1,2,2,2,3]; // 0=P1 1=P2 2=Flop 3=Turn
+const GROUP_CLASS = ['p1','p2','flop','turn'];
+
+const state = {
+  slots:       Array(8).fill(null), // card indices or null (7=turn is optional)
+  activeSlot:  0,
+  lastResult:  null,
+};
+
+// Next empty slot starting from current, wrapping (0–7, turn=7 is optional so skip if all 0-6 filled)
+function nextEmptySlot(from) {
+  for (let i = 0; i < 8; i++) {
+    const idx = (from + i) % 8;
+    if (state.slots[idx] === null) return idx;
+  }
+  return null; // all filled
+}
+
+function slotUsedSet() {
+  return new Set(state.slots.filter(c => c !== null));
+}
+
+function slotOf(card) {
+  return state.slots.indexOf(card);
+}
+
+// ── Render ──────────────────────────────────────────────────
+
+function renderSlots() {
+  const containers = [
+    { el: document.getElementById('slots-p1'),   indices: [0,1] },
+    { el: document.getElementById('slots-p2'),   indices: [2,3] },
+    { el: document.getElementById('slots-flop'), indices: [4,5,6] },
+    { el: document.getElementById('slots-turn'), indices: [7] },
+  ];
+  containers.forEach(({ el, indices }) => {
+    el.innerHTML = '';
+    indices.forEach(idx => {
+      const div = document.createElement('div');
+      const grp = GROUP_CLASS[SLOT_GROUP[idx]];
+      div.className = 'card-slot ' + grp;
+      if (idx === state.activeSlot) div.classList.add('active');
+
+      const card = state.slots[idx];
+      if (card !== null) {
+        div.classList.add('filled');
+        const suit  = Math.floor(card / 13);
+        const isRed = suit === 1 || suit === 2;
+        div.innerHTML = `<span class="slot-card-label ${isRed?'suit-red':'suit-black'}">${cardName(card)}</span>`;
+      } else {
+        div.innerHTML = `<span class="empty-hint">${idx+1}</span>`;
+      }
+
+      div.addEventListener('click', () => onSlotClick(idx));
+      el.appendChild(div);
+    });
+  });
+}
+
+function renderDeck() {
+  const grid  = document.getElementById('deck-grid');
+  const used  = slotUsedSet();
+  grid.innerHTML = '';
+
+  for (let i = 0; i < 52; i++) {
+    const suit  = Math.floor(i / 13);
+    const isRed = suit === 1 || suit === 2;
+    const div   = document.createElement('div');
+    div.className = 'deck-card ' + (isRed ? 'suit-red' : 'suit-black');
+    div.textContent = cardName(i);
+
+    if (used.has(i)) {
+      const slotIdx = slotOf(i);
+      const grpCls  = GROUP_CLASS[SLOT_GROUP[slotIdx]];
+      div.classList.add('used-' + grpCls);
+    }
+
+    div.addEventListener('click', () => onDeckCardClick(i));
+    grid.appendChild(div);
+  }
+}
+
+function renderCalcBtn() {
+  const btn    = document.getElementById('btn-calc');
+  const filled = state.slots.filter(c => c !== null).length;
+  const hasTurn = state.slots[7] !== null;
+  if (filled >= 7) {
+    btn.disabled = false;
+    btn.textContent = hasTurn
+      ? 'Enumerate 44 Combinations (Turn)'
+      : 'Enumerate 990 Combinations (Flop)';
+  } else {
+    btn.disabled = true;
+    btn.textContent = 'Enumerate 990 Combinations (Flop)';
+  }
+}
+
+function render() {
+  renderSlots();
+  renderDeck();
+  renderCalcBtn();
+}
+
+// ── Event Handlers ───────────────────────────────────────────
+
+function onSlotClick(idx) {
+  // If slot has a card, clear it → stale results become invalid
+  if (state.slots[idx] !== null) {
+    state.slots[idx] = null;
+    state.activeSlot  = idx;
+    state.lastResult  = null;
+    resetResults();
+  } else {
+    state.activeSlot = idx;
+  }
+  render();
+}
+
+function onDeckCardClick(card) {
+  if (state.activeSlot === null) return;
+  // If already used in another slot, ignore
+  if (slotUsedSet().has(card)) return;
+
+  state.slots[state.activeSlot] = card;
+  // Changing cards invalidates previous result
+  if (state.lastResult) { state.lastResult = null; resetResults(); }
+  // Advance to next empty slot
+  const next = nextEmptySlot((state.activeSlot + 1) % 7);
+  state.activeSlot = next; // null if all filled
+  render();
+}
+
+function resetResults() {
+  document.getElementById('results-area').innerHTML =
+    '<div class="results-placeholder">Chọn đủ 7 lá rồi nhấn Enumerate để tính equity.</div>';
+}
+
+function loadPreset(preset) {
+  // preset.turn is optional; fill 8 slots (turn defaults to null)
+  state.slots = [...preset.p1, ...preset.p2, ...preset.flop, preset.turn ?? null];
+  state.activeSlot = null;
+  state.lastResult = null;
+  resetResults();
+  render();
+}
+
+function clearAll() {
+  state.slots = Array(8).fill(null);
+  state.activeSlot = 0;
+  state.lastResult = null;
+  resetResults();
+  render();
+}
+
+// ── Presets ──────────────────────────────────────────────────
+
+// Preset 1: A♠A♥ vs 7♦8♦, Flop 9♦6♣2♠
+// A♠=12 A♥=25 7♦=31 8♦=32 9♦=33 6♣=43 2♠=0
+const PRESET_1 = { p1:[12,25], p2:[31,32], flop:[33,43,0] };
+
+// Preset 2: K♠K♥ vs Q♦J♦, Flop A♦T♣2♠
+// K♠=11 K♥=24 Q♦=36 J♦=35 A♦=38 T♣=47 2♠=0
+const PRESET_2 = { p1:[11,24], p2:[36,35], flop:[38,47,0] };
+
+// ── Tabs ─────────────────────────────────────────────────────
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── Helpers ──────────────────────────────────────────────────
+
+function fmtVND(n) {
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function cardSpan(idx) {
+  const suit  = Math.floor(idx / 13);
+  const isRed = suit === 1 || suit === 2;
+  return `<span class="${isRed ? 'card-red' : ''}">${cardName(idx)}</span>`;
+}
+
+// ── renderCashout: called on pot/rake/jackpot input change ────
+
+function renderCashout(equity1) {
+  const pot  = parseFloat(document.getElementById('co-pot').value)  || 0;
+  const rake = parseFloat(document.getElementById('co-rake').value) || 0;
+  const jpf  = parseFloat(document.getElementById('co-jpf').value)  || 0;
+
+  const netPot  = pot * (1 - rake/100 - jpf/100);
+  const cashout = netPot * equity1 * 0.99;
+  const fee     = netPot * equity1 * 0.01;
+
+  document.getElementById('bk-pot').textContent     = fmtVND(pot)     + ' đ';
+  document.getElementById('bk-netpot').textContent  = fmtVND(netPot)  + ' đ';
+  document.getElementById('bk-equity').textContent  = (equity1*100).toFixed(2) + '%';
+  document.getElementById('bk-cashout').textContent = fmtVND(cashout) + ' đ';
+  document.getElementById('bk-fee').textContent     = fmtVND(fee)     + ' đ';
+}
+
+// ── renderResults: build full results HTML ───────────────────
+
+function renderResults(res) {
+  const pct1 = (res.equity1 * 100).toFixed(2);
+  const pct2 = (res.equity2 * 100).toFixed(2);
+  const eligible = res.equity1 >= 0.60;
+
+  // ── Sample table rows ──
+  const sampleRows = res.samples.map((s, i) => {
+    const resClass = s.cmp > 0 ? 'result-p1' : s.cmp < 0 ? 'result-p2' : 'result-tie';
+    const resText  = s.cmp > 0 ? 'P1 thắng'  : s.cmp < 0 ? 'P2 thắng'  : 'Hòa';
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${cardSpan(s.turn)}</td>
+      <td>${cardSpan(s.river)}</td>
+      <td>${HAND_NAMES[s.s1[0]]}</td>
+      <td>${HAND_NAMES[s.s2[0]]}</td>
+      <td class="${resClass}">${resText}</td>
+    </tr>`;
+  }).join('');
+
+  // ── Hand distribution bars ──
+  const maxDist = Math.max(...res.p1WinDist, 1);
+  const distRows = HAND_NAMES.map((name, i) => {
+    const count = res.p1WinDist[i];
+    const pct   = (count / maxDist * 100).toFixed(1);
+    return `<div class="dist-row">
+      <div class="dist-name">${name}</div>
+      <div class="dist-track"><div class="dist-fill" style="width:${pct}%"></div></div>
+      <div class="dist-count">${count}</div>
+    </div>`;
+  }).reverse().join(''); // reverse: show SF at top
+
+  document.getElementById('results-area').innerHTML = `
+    <div class="results-panel">
+
+      <!-- Equity visualization -->
+      <div class="eq-section">
+        <div class="eq-row">
+          <div class="eq-player p1">Cửa Trên (P1)</div>
+          <div class="eq-bar-track"><div class="eq-bar-fill p1" style="width:${pct1}%"></div></div>
+          <div class="eq-pct p1">${pct1}%</div>
+        </div>
+        <div class="eq-row">
+          <div class="eq-player p2">Cửa Dưới (P2)</div>
+          <div class="eq-bar-track"><div class="eq-bar-fill p2" style="width:${pct2}%"></div></div>
+          <div class="eq-pct p2">${pct2}%</div>
+        </div>
+        <div class="stats-row">
+          <span>P1 thắng: ${res.p1Wins}</span>
+          <span>Hòa: ${res.ties}</span>
+          <span>P2 thắng: ${res.p2Wins}</span>
+          <span>Tổng: ${res.total} (${res.mode === 'turn' ? 'Turn — 44 combos' : 'Flop — 990 combos'})</span>
+        </div>
+      </div>
+
+      <!-- Cashout calculator -->
+      <div class="cashout-section">
+        <div class="cashout-header">
+          <span class="cashout-title">N8 Cashout Calculator</span>
+          <span class="badge ${eligible ? 'eligible' : 'ineligible'}">
+            ${eligible ? '✓ Đủ điều kiện cashout' : '✗ Chưa đủ điều kiện (cần ≥60%)'}
+          </span>
+        </div>
+        <div class="cashout-inputs">
+          <div class="c-input-group">
+            <label>Pot size (VNĐ)</label>
+            <input id="co-pot" type="number" min="0" placeholder="1000000" value="1000000">
+          </div>
+          <div class="c-input-group">
+            <label>Rake (%)</label>
+            <input id="co-rake" type="number" min="0" max="100" step="0.1" placeholder="3" value="3">
+          </div>
+          <div class="c-input-group">
+            <label>Jackpot fee (%)</label>
+            <input id="co-jpf" type="number" min="0" max="100" step="0.1" placeholder="1" value="1">
+          </div>
+        </div>
+        <div class="breakdown">
+          <div class="bk-row"><span class="bk-label">Pot gốc</span><span class="bk-value" id="bk-pot">—</span></div>
+          <div class="bk-row"><span class="bk-label">Net pot (sau rake &amp; jackpot fee)</span><span class="bk-value" id="bk-netpot">—</span></div>
+          <div class="bk-row"><span class="bk-label">Equity P1</span><span class="bk-value" id="bk-equity">${pct1}%</span></div>
+          <div class="bk-row cashout-row"><span class="bk-label">Cashout = net pot × equity × 99%</span><span class="bk-value" id="bk-cashout">—</span></div>
+          <div class="bk-row fee-row"><span class="bk-label">Phí N8 (1%)</span><span class="bk-value" id="bk-fee">—</span></div>
+        </div>
+      </div>
+
+      <!-- Sample table -->
+      <div class="sample-section">
+        <div class="section-title">15 combinations đầu tiên</div>
+        <table class="sample-table">
+          <thead><tr><th>#</th><th>Turn</th><th>River</th><th>Tay P1</th><th>Tay P2</th><th>Kết quả</th></tr></thead>
+          <tbody>${sampleRows}</tbody>
+        </table>
+      </div>
+
+      <!-- Hand distribution -->
+      <div class="dist-section">
+        <div class="section-title">Phân bổ tay bài khi P1 thắng (${res.p1Wins}/${res.total} combinations)</div>
+        ${distRows}
+      </div>
+
+    </div>
+  `;
+
+  // Attach cashout input listeners + trigger initial calc
+  const equity1 = res.equity1;
+  ['co-pot','co-rake','co-jpf'].forEach(id => {
+    document.getElementById(id).addEventListener('input', () => renderCashout(equity1));
+  });
+  renderCashout(equity1);
+}
+
+// ── Wire up buttons ──────────────────────────────────────────
+
+document.getElementById('btn-preset1').addEventListener('click', () => loadPreset(PRESET_1));
+document.getElementById('btn-preset2').addEventListener('click', () => loadPreset(PRESET_2));
+document.getElementById('btn-clear').addEventListener('click', clearAll);
+document.getElementById('btn-calc').addEventListener('click', () => {
+  const p1   = state.slots.slice(0,2);
+  const p2   = state.slots.slice(2,4);
+  const flop = state.slots.slice(4,7);
+  const turn = state.slots[7]; // null = Flop mode
+
+  const modeLabel = turn !== null
+    ? 'Đang enumerate 44 combinations (Turn)…'
+    : 'Đang enumerate 990 combinations (Flop)…';
+  document.getElementById('results-area').innerHTML =
+    `<div class="results-placeholder">${modeLabel}</div>`;
+
+  setTimeout(() => {
+    const res = turn !== null
+      ? enumerateTurn(p1, p2, flop, turn)
+      : enumerate990(p1, p2, flop);
+    state.lastResult = res;
+    renderResults(res);
+  }, 20);
+});
+
+// ── Init ─────────────────────────────────────────────────────
+
+render();
+
+// =============================================================
+// SECTION 5 — 72 Club Insurance Calculator
+// Insurance = Total_Pot × 3.5% × outs
+// Fair price = Total_Pot × outs / 44
+// Edge = Insurance − Fair_price = Total_Pot × outs × (3.5% − 1/44)
+// (3.5% = 0.035, 1/44 ≈ 0.02273 → house edge ≈ 1.227% per out)
+// Turn & River are completely independent — different outs possible.
+// =============================================================
+
+function c72Calc(pot, outs) {
+  const insurance = pot * 0.035 * outs;
+  const fairPrice = pot * outs / 44;
+  const edge      = insurance - fairPrice;
+  const hitPct    = outs / 44 * 100;
+  const edgePct   = pot > 0 ? edge / insurance * 100 : 0;
+  return { insurance, fairPrice, edge, hitPct, edgePct };
+}
+
+function yLabel(v) {
+  if (v >= 1e6)  return (v / 1e6).toFixed(1) + 'M';
+  if (v >= 1e3)  return Math.round(v / 1e3) + 'k';
+  return Math.round(v).toString();
+}
+
+function render72Street(resultId, outs, pot) {
+  const r = c72Calc(pot, outs);
+  document.getElementById(resultId).innerHTML = `
+    <div class="c72-metric">
+      <div class="c72-metric-label">Phí bảo hiểm</div>
+      <div class="c72-metric-value insurance">${fmtVND(r.insurance)} đ</div>
+    </div>
+    <div class="c72-metric">
+      <div class="c72-metric-label">Xác suất hit (${outs}/44)</div>
+      <div class="c72-metric-value hitpct">${r.hitPct.toFixed(2)}%</div>
+    </div>
+    <div class="c72-metric">
+      <div class="c72-metric-label">Fair price (pot × ${outs}/44)</div>
+      <div class="c72-metric-value fair">${fmtVND(r.fairPrice)} đ</div>
+    </div>
+    <div class="c72-metric">
+      <div class="c72-metric-label">House edge</div>
+      <div class="c72-metric-value edge">${fmtVND(r.edge)} đ (${r.edgePct.toFixed(1)}%)</div>
+    </div>
+  `;
+}
+
+function render72Table(pot, turnOuts, riverOuts) {
+  const tbody = document.getElementById('c72-summary-body');
+  let rows = '';
+  for (let o = 1; o <= 13; o++) {
+    const r = c72Calc(pot, o);
+    const isTurn  = o === turnOuts;
+    const isRiver = o === riverOuts;
+    let cls = '';
+    if (isTurn && isRiver) cls = 'highlight-both';
+    else if (isTurn)       cls = 'highlight-turn';
+    else if (isRiver)      cls = 'highlight-river';
+
+    rows += `<tr class="${cls}">
+      <td>${o}</td>
+      <td>${fmtVND(r.insurance)} đ</td>
+      <td>${r.hitPct.toFixed(2)}%</td>
+      <td>${fmtVND(r.fairPrice)} đ</td>
+      <td>${fmtVND(r.edge)} đ</td>
+    </tr>`;
+  }
+  tbody.innerHTML = rows;
+}
+
+function render72Chart(pot, turnOuts) {
+  // SVG dimensions
+  const W=560, H=220, pl=72, pr=20, pt=22, pb=44;
+  const cW = W - pl - pr;
+  const cH = H - pt - pb;
+
+  const maxV = pot * 0.035 * 13; // 72 Club price at 13 outs (always the max)
+
+  function xPos(outs)  { return pl + (outs - 1) / 12 * cW; }
+  function yPos(value) { return maxV > 0 ? pt + (1 - value / maxV) * cH : pt + cH; }
+
+  // Build polyline point strings
+  let insPts = '', fairPts = '';
+  for (let o = 1; o <= 13; o++) {
+    const ins  = pot * 0.035 * o;
+    const fair = pot * o / 44;
+    insPts  += `${xPos(o).toFixed(1)},${yPos(ins).toFixed(1)} `;
+    fairPts += `${xPos(o).toFixed(1)},${yPos(fair).toFixed(1)} `;
+  }
+
+  // Y grid lines (0, 25%, 50%, 75%, 100%)
+  let gridLines = '', yLabels = '';
+  [0, 0.25, 0.5, 0.75, 1].forEach(pct => {
+    const v = maxV * pct;
+    const y = yPos(v).toFixed(1);
+    gridLines += `<line x1="${pl}" y1="${y}" x2="${W - pr}" y2="${y}" class="chart-grid"/>`;
+    yLabels   += `<text x="${pl - 5}" y="${(parseFloat(y) + 4).toFixed(1)}" class="chart-label" text-anchor="end">${yLabel(v)}</text>`;
+  });
+
+  // X labels (1, 3, 5, 7, 9, 11, 13)
+  let xLabels = '';
+  for (let o = 1; o <= 13; o += 2) {
+    const x = xPos(o).toFixed(1);
+    xLabels += `<text x="${x}" y="${H - pb + 14}" class="chart-label" text-anchor="middle">${o}</text>`;
+    xLabels += `<line x1="${x}" y1="${pt + cH}" x2="${x}" y2="${pt + cH + 4}" stroke="#2a3050" stroke-width="1"/>`;
+  }
+
+  // Vertical indicator for current turn outs
+  const cx = xPos(turnOuts).toFixed(1);
+
+  document.getElementById('c72-chart-wrap').innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;overflow:visible" aria-label="72 Club vs Fair Value chart">
+      ${gridLines}
+      ${yLabels}
+      ${xLabels}
+      <!-- Axes -->
+      <line x1="${pl}" y1="${pt}" x2="${pl}" y2="${pt + cH}" class="chart-axis"/>
+      <line x1="${pl}" y1="${pt + cH}" x2="${W - pr}" y2="${pt + cH}" class="chart-axis"/>
+      <!-- Axis labels -->
+      <text x="${W / 2}" y="${H - 4}" class="chart-label" text-anchor="middle">Số outs</text>
+      <!-- Current outs indicator -->
+      <line x1="${cx}" y1="${pt}" x2="${cx}" y2="${pt + cH}" stroke="#4a9edd" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+      <!-- Fair value line (green, lower slope) -->
+      <polyline points="${fairPts.trim()}" fill="none" stroke="#1db97a" stroke-width="2.5" stroke-linejoin="round"/>
+      <!-- 72 Club line (red, steeper) -->
+      <polyline points="${insPts.trim()}" fill="none" stroke="#e05555" stroke-width="2.5" stroke-linejoin="round"/>
+      <!-- Dots at current turn outs -->
+      <circle cx="${cx}" cy="${yPos(pot * 0.035 * turnOuts).toFixed(1)}" r="4" fill="#e05555"/>
+      <circle cx="${cx}" cy="${yPos(pot * turnOuts / 44).toFixed(1)}" r="4" fill="#1db97a"/>
+      <!-- Legend -->
+      <line x1="${pl}" y1="${pt - 10}" x2="${pl + 22}" y2="${pt - 10}" stroke="#e05555" stroke-width="2.5"/>
+      <text x="${pl + 26}" y="${pt - 6}" class="chart-label" fill="#e05555">72 Club (3.5%/out)</text>
+      <line x1="${pl + 145}" y1="${pt - 10}" x2="${pl + 167}" y2="${pt - 10}" stroke="#1db97a" stroke-width="2.5"/>
+      <text x="${pl + 171}" y="${pt - 6}" class="chart-label" fill="#1db97a">Fair value (1/44/out)</text>
+    </svg>
+  `;
+}
+
+function render72All() {
+  const pot       = parseFloat(document.getElementById('c72-pot').value)        || 0;
+  const turnOuts  = Math.min(13, Math.max(1, parseInt(document.getElementById('c72-turn-num').value)  || 8));
+  const riverOuts = Math.min(13, Math.max(1, parseInt(document.getElementById('c72-river-num').value) || 7));
+
+  render72Street('c72-turn-result',  turnOuts,  pot);
+  render72Street('c72-river-result', riverOuts, pot);
+  render72Table(pot, turnOuts, riverOuts);
+  render72Chart(pot, turnOuts);
+}
+
+// ── Slider ↔ Number sync ──────────────────────────────────────
+
+function syncSlider(sliderId, numId) {
+  const slider = document.getElementById(sliderId);
+  const num    = document.getElementById(numId);
+  slider.addEventListener('input', () => { num.value = slider.value;  render72All(); });
+  num.addEventListener('input',    () => {
+    const v = Math.min(13, Math.max(1, parseInt(num.value) || 1));
+    num.value = v; slider.value = v;
+    render72All();
+  });
+}
+
+syncSlider('c72-turn-slider',  'c72-turn-num');
+syncSlider('c72-river-slider', 'c72-river-num');
+document.getElementById('c72-pot').addEventListener('input', render72All);
+
+// Initial render
+render72All();
+
+// =============================================================
+// SECTION 6 — Console Tests (Phase 1 & 2)
+// =============================================================
+
+(function runTests() {
+  console.group('=== Poker Tool — Phase 1 Tests ===');
+  console.assert(cardName(12)==='A♠', `cardName(12) got ${cardName(12)}`);
+  console.assert(cardName(31)==='7♦', `cardName(31) got ${cardName(31)}`);
+  console.log('✓ cardName passed');
+
+  const wheelResult = best7([12,13,27,41,3,24,36]);
+  console.assert(wheelResult[0]===4 && wheelResult[1]===3, `Wheel got [${wheelResult}]`);
+  console.log(`✓ Wheel straight: [${wheelResult}] (expected [4,3])`);
+
+  const quadsResult = evaluate5([12,25,38,51,11]);
+  console.assert(quadsResult[0]===7 && quadsResult[1]===12 && quadsResult[2]===11, `Quads got [${quadsResult}]`);
+  console.log(`✓ Quads: [${quadsResult}] (expected [7,12,11])`);
+
+  const fhResult = evaluate5([11,24,37,51,12]);
+  console.assert(fhResult[0]===6 && fhResult[1]===11 && fhResult[2]===12, `FH got [${fhResult}]`);
+  console.log(`✓ Full House: [${fhResult}] (expected [6,11,12])`);
+
+  console.assert(compare([6,12,11],[6,11,12])===1, 'compare AAA-KK vs KKK-AA');
+  console.log('✓ compare ordering passed');
+  console.groupEnd();
+
+  console.group('=== Poker Tool — Phase 2 Tests (enumerate990) ===');
+  const r1 = enumerate990([12,25],[31,32],[33,43,0]);
+  console.assert(r1.deckSize===45, `deck size ${r1.deckSize}`);
+  console.assert(r1.total===990,   `total ${r1.total}`);
+  console.assert(r1.equity1>=0.67 && r1.equity1<=0.69, `P1 equity ${(r1.equity1*100).toFixed(2)}%`);
+  console.log(`✓ Preset1 (AA vs 78s): P1=${(r1.equity1*100).toFixed(2)}% P2=${(r1.equity2*100).toFixed(2)}% — ${r1.p1Wins}W/${r1.ties}T/${r1.p2Wins}L`);
+
+  const r2 = enumerate990([11,24],[36,35],[38,47,0]);
+  console.assert(r2.equity1<0.60, `P1 equity ${(r2.equity1*100).toFixed(2)}%`);
+  console.log(`✓ Preset2 (KK vs QJs): P1=${(r2.equity1*100).toFixed(2)}% P2=${(r2.equity2*100).toFixed(2)}% — ${r2.p1Wins}W/${r2.ties}T/${r2.p2Wins}L`);
+  console.groupEnd();
+})();
+</script>
+</body>
+</html>
