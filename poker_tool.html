@@ -469,10 +469,12 @@
           <thead>
             <tr>
               <th>Outs</th>
-              <th>Phí (Turn/River)</th>
-              <th>Hit %</th>
-              <th>Fair Price</th>
-              <th>House Edge</th>
+              <th>Phí (3.5%)</th>
+              <th>Hit% Turn (/45)</th>
+              <th>Hit% River (/44)</th>
+              <th>Fair Turn</th>
+              <th>Fair River</th>
+              <th>Edge (Turn)</th>
             </tr>
           </thead>
           <tbody id="c72-summary-body"></tbody>
@@ -1017,20 +1019,25 @@ render();
 
 // =============================================================
 // SECTION 5 — 72 Club Insurance Calculator
-// Insurance = Total_Pot × 3.5% × outs
-// Fair price = Total_Pot × outs / 44
-// Edge = Insurance − Fair_price = Total_Pot × outs × (3.5% − 1/44)
-// (3.5% = 0.035, 1/44 ≈ 0.02273 → house edge ≈ 1.227% per out)
+// Insurance = Total_Pot × 3.5% × outs  (giống nhau cho cả Turn và River)
+// Fair price Turn  = Total_Pot × outs / 45  (còn 45 lá trước khi turn ra)
+// Fair price River = Total_Pot × outs / 44  (còn 44 lá trước khi river ra)
+//
+// Tại sao khác nhau?
+//   Turn  insurance: mua trước khi turn ra → deck còn 52−4−3=45 lá
+//   River insurance: mua trước khi river ra → deck còn 52−4−4=44 lá
+//
 // Turn & River are completely independent — different outs possible.
 // =============================================================
 
-function c72Calc(pot, outs) {
+// denom: 45 cho Turn, 44 cho River
+function c72Calc(pot, outs, denom) {
   const insurance = pot * 0.035 * outs;
-  const fairPrice = pot * outs / 44;
+  const fairPrice = pot * outs / denom;
   const edge      = insurance - fairPrice;
-  const hitPct    = outs / 44 * 100;
+  const hitPct    = outs / denom * 100;
   const edgePct   = pot > 0 ? edge / insurance * 100 : 0;
-  return { insurance, fairPrice, edge, hitPct, edgePct };
+  return { insurance, fairPrice, edge, hitPct, edgePct, denom };
 }
 
 function yLabel(v) {
@@ -1039,19 +1046,20 @@ function yLabel(v) {
   return Math.round(v).toString();
 }
 
-function render72Street(resultId, outs, pot) {
-  const r = c72Calc(pot, outs);
+// denom: 45 cho Turn (deck còn 45 trước turn), 44 cho River (deck còn 44 trước river)
+function render72Street(resultId, outs, pot, denom) {
+  const r = c72Calc(pot, outs, denom);
   document.getElementById(resultId).innerHTML = `
     <div class="c72-metric">
       <div class="c72-metric-label">Phí bảo hiểm</div>
       <div class="c72-metric-value insurance">${fmtVND(r.insurance)} đ</div>
     </div>
     <div class="c72-metric">
-      <div class="c72-metric-label">Xác suất hit (${outs}/44)</div>
+      <div class="c72-metric-label">Xác suất hit (${outs}/${denom})</div>
       <div class="c72-metric-value hitpct">${r.hitPct.toFixed(2)}%</div>
     </div>
     <div class="c72-metric">
-      <div class="c72-metric-label">Fair price (pot × ${outs}/44)</div>
+      <div class="c72-metric-label">Fair price (pot × ${outs}/${denom})</div>
       <div class="c72-metric-value fair">${fmtVND(r.fairPrice)} đ</div>
     </div>
     <div class="c72-metric">
@@ -1065,7 +1073,8 @@ function render72Table(pot, turnOuts, riverOuts) {
   const tbody = document.getElementById('c72-summary-body');
   let rows = '';
   for (let o = 1; o <= 13; o++) {
-    const r = c72Calc(pot, o);
+    const rT = c72Calc(pot, o, 45); // Turn: /45
+    const rR = c72Calc(pot, o, 44); // River: /44
     const isTurn  = o === turnOuts;
     const isRiver = o === riverOuts;
     let cls = '';
@@ -1075,10 +1084,12 @@ function render72Table(pot, turnOuts, riverOuts) {
 
     rows += `<tr class="${cls}">
       <td>${o}</td>
-      <td>${fmtVND(r.insurance)} đ</td>
-      <td>${r.hitPct.toFixed(2)}%</td>
-      <td>${fmtVND(r.fairPrice)} đ</td>
-      <td>${fmtVND(r.edge)} đ</td>
+      <td>${fmtVND(rT.insurance)} đ</td>
+      <td>${rT.hitPct.toFixed(2)}%</td>
+      <td>${rR.hitPct.toFixed(2)}%</td>
+      <td>${fmtVND(rT.fairPrice)} đ</td>
+      <td>${fmtVND(rR.fairPrice)} đ</td>
+      <td>${fmtVND(rT.edge)} đ</td>
     </tr>`;
   }
   tbody.innerHTML = rows;
@@ -1096,12 +1107,14 @@ function render72Chart(pot, turnOuts) {
   function yPos(value) { return maxV > 0 ? pt + (1 - value / maxV) * cH : pt + cH; }
 
   // Build polyline point strings
-  let insPts = '', fairPts = '';
+  let insPts = '', fairTurnPts = '', fairRiverPts = '';
   for (let o = 1; o <= 13; o++) {
-    const ins  = pot * 0.035 * o;
-    const fair = pot * o / 44;
-    insPts  += `${xPos(o).toFixed(1)},${yPos(ins).toFixed(1)} `;
-    fairPts += `${xPos(o).toFixed(1)},${yPos(fair).toFixed(1)} `;
+    const ins       = pot * 0.035 * o;
+    const fairTurn  = pot * o / 45; // Turn: 52−4−3=45 lá còn
+    const fairRiver = pot * o / 44; // River: 52−4−4=44 lá còn
+    insPts       += `${xPos(o).toFixed(1)},${yPos(ins).toFixed(1)} `;
+    fairTurnPts  += `${xPos(o).toFixed(1)},${yPos(fairTurn).toFixed(1)} `;
+    fairRiverPts += `${xPos(o).toFixed(1)},${yPos(fairRiver).toFixed(1)} `;
   }
 
   // Y grid lines (0, 25%, 50%, 75%, 100%)
@@ -1136,18 +1149,23 @@ function render72Chart(pot, turnOuts) {
       <text x="${W / 2}" y="${H - 4}" class="chart-label" text-anchor="middle">Số outs</text>
       <!-- Current outs indicator -->
       <line x1="${cx}" y1="${pt}" x2="${cx}" y2="${pt + cH}" stroke="#4a9edd" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
-      <!-- Fair value line (green, lower slope) -->
-      <polyline points="${fairPts.trim()}" fill="none" stroke="#1db97a" stroke-width="2.5" stroke-linejoin="round"/>
-      <!-- 72 Club line (red, steeper) -->
+      <!-- Fair value Turn /45 (green solid) -->
+      <polyline points="${fairTurnPts.trim()}"  fill="none" stroke="#1db97a" stroke-width="2" stroke-linejoin="round"/>
+      <!-- Fair value River /44 (green dashed, slightly higher) -->
+      <polyline points="${fairRiverPts.trim()}" fill="none" stroke="#1db97a" stroke-width="2" stroke-dasharray="5,3" stroke-linejoin="round"/>
+      <!-- 72 Club insurance line (red, steepest) -->
       <polyline points="${insPts.trim()}" fill="none" stroke="#e05555" stroke-width="2.5" stroke-linejoin="round"/>
       <!-- Dots at current turn outs -->
       <circle cx="${cx}" cy="${yPos(pot * 0.035 * turnOuts).toFixed(1)}" r="4" fill="#e05555"/>
-      <circle cx="${cx}" cy="${yPos(pot * turnOuts / 44).toFixed(1)}" r="4" fill="#1db97a"/>
+      <circle cx="${cx}" cy="${yPos(pot * turnOuts / 45).toFixed(1)}" r="4" fill="#1db97a"/>
+      <circle cx="${cx}" cy="${yPos(pot * turnOuts / 44).toFixed(1)}" r="3" fill="none" stroke="#1db97a" stroke-width="1.5"/>
       <!-- Legend -->
       <line x1="${pl}" y1="${pt - 10}" x2="${pl + 22}" y2="${pt - 10}" stroke="#e05555" stroke-width="2.5"/>
       <text x="${pl + 26}" y="${pt - 6}" class="chart-label" fill="#e05555">72 Club (3.5%/out)</text>
-      <line x1="${pl + 145}" y1="${pt - 10}" x2="${pl + 167}" y2="${pt - 10}" stroke="#1db97a" stroke-width="2.5"/>
-      <text x="${pl + 171}" y="${pt - 6}" class="chart-label" fill="#1db97a">Fair value (1/44/out)</text>
+      <line x1="${pl + 145}" y1="${pt - 10}" x2="${pl + 167}" y2="${pt - 10}" stroke="#1db97a" stroke-width="2"/>
+      <text x="${pl + 171}" y="${pt - 6}" class="chart-label" fill="#1db97a">Fair Turn (/45)</text>
+      <line x1="${pl + 260}" y1="${pt - 10}" x2="${pl + 282}" y2="${pt - 10}" stroke="#1db97a" stroke-width="2" stroke-dasharray="5,3"/>
+      <text x="${pl + 286}" y="${pt - 6}" class="chart-label" fill="#1db97a">Fair River (/44)</text>
     </svg>
   `;
 }
@@ -1157,8 +1175,8 @@ function render72All() {
   const turnOuts  = Math.min(13, Math.max(1, parseInt(document.getElementById('c72-turn-num').value)  || 8));
   const riverOuts = Math.min(13, Math.max(1, parseInt(document.getElementById('c72-river-num').value) || 7));
 
-  render72Street('c72-turn-result',  turnOuts,  pot);
-  render72Street('c72-river-result', riverOuts, pot);
+  render72Street('c72-turn-result',  turnOuts,  pot, 45); // Turn: 45 lá còn
+  render72Street('c72-river-result', riverOuts, pot, 44); // River: 44 lá còn
   render72Table(pot, turnOuts, riverOuts);
   render72Chart(pot, turnOuts);
 }
